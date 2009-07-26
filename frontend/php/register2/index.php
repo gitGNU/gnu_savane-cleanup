@@ -251,6 +251,10 @@ While this item will be useful to track the registration process, *approving or 
 #		$user_email);
 
     {
+      // Use trackers database
+      include('/etc/savane/trackers/.savane.conf.php');
+      db_connect();
+
       require_directory("trackers");
       trackers_init($GLOBALS['sys_group_id']);
 

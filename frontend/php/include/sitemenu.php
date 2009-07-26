@@ -228,7 +228,10 @@ function sitemenu_thispage($page_title, $page_toptab=0, $page_group=0)
 			      _("Add this page to my bookmarks"));
 	}
     }
-  
+
+  // SPLIT: don't display receipes
+  return;
+
   ##
   # Show related recipes. Maybe not the best way to put it, but in "this page"
   # it makes sense.
@@ -425,7 +428,9 @@ function sitemenu_loggedin($page_title, $page_toptab=0, $page_group=0)
 		    _("My Items"),
 		    1,
 		    _("Browse my items (submitted by me or assigned to me)"));
-  if (user_use_votes())
+  // SPLIT: don't look for votes
+  //if (user_use_votes())
+  if (false)
     {
       $HTML->menu_entry($GLOBALS['sys_home'].'my/votes.php',
 			_("My Votes"),

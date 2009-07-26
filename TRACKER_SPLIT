@@ -1,0 +1,48 @@
+1.
+SetEnv SAVANE_CONF /etc/savane/trackers/
+URLs:
+/bugs/
+/support/
+/task/
+/patch/
+/cookbook/
+/my/
+/my/items.php
+
+2. Split database (/!\ some tables will be duplicated)
+Base:
+form forum forum_group_list forum_monitored_forums forum_saved_place forum_thread_id group_history group_type groups groups_default_permissions groups_gpg_keyrings mail_group_list news_bytes people_job people_job_category people_job_inventory people_job_status people_skill people_skill_inventory people_skill_level people_skill_year session user user_bookmarks user_group user_lostpw user_preferences user_squad
+
+mysql savane -e 'DROP TABLE bugs,bugs_canned_responses,bugs_cc,bugs_dependencies,bugs_field,bugs_field_usage,bugs_field_value,bugs_filter,bugs_history,bugs_report,bugs_report_field,cookbook,cookbook_canned_responses,cookbook_cc,cookbook_context2recipe,cookbook_dependencies,cookbook_field,cookbook_field_usage,cookbook_field_value,cookbook_filter,cookbook_history,cookbook_report,cookbook_report_field,group_preferences,patch,patch_canned_responses,patch_cc,patch_dependencies,patch_field,patch_field_usage,patch_field_value,patch_filter,patch_history,patch_report,patch_report_field,support,support_canned_responses,support_cc,support_dependencies,support_field,support_field_usage,support_field_value,support_filter,support_history,support_report,support_report_field,task,task_canned_responses,task_cc,task_dependencies,task_field,task_field_usage,task_field_value,task_filter,task_history,task_report,task_report_field,trackers_export,trackers_field_transition,trackers_field_transition_other_field_update,trackers_file,trackers_msgid,trackers_notification,trackers_notification_event,trackers_notification_role,trackers_spamban,trackers_spamcheck_queue,trackers_spamcheck_queue_notification,trackers_spamscore,trackers_watcher,user_votes;'
+
+Trackers:
+mysqldump savane bugs bugs_canned_responses bugs_cc bugs_dependencies bugs_field bugs_field_usage bugs_field_value bugs_filter bugs_history bugs_report bugs_report_field cookbook cookbook_canned_responses cookbook_cc cookbook_context2recipe cookbook_dependencies cookbook_field cookbook_field_usage cookbook_field_value cookbook_filter cookbook_history cookbook_report cookbook_report_field form group_preferences group_type groups groups_default_permissions patch patch_canned_responses patch_cc patch_dependencies patch_field patch_field_usage patch_field_value patch_filter patch_history patch_report patch_report_field session support support_canned_responses support_cc support_dependencies support_field support_field_usage support_field_value support_filter support_history support_report support_report_field task task_canned_responses task_cc task_dependencies task_field task_field_usage task_field_value task_filter task_history task_report task_report_field trackers_export trackers_field_transition trackers_field_transition_other_field_update trackers_file trackers_msgid trackers_notification trackers_notification_event trackers_notification_role trackers_spamban trackers_spamcheck_queue trackers_spamcheck_queue_notification trackers_spamscore trackers_watcher user user_group user_preferences user_squad user_votes | mysql savane_trackers
+
+3. Replicate
+- user
+- user_group
+- user_squad
+- groups
+- group_type (can_use_<tracker>..)
+- groups_default_permissions
+
+mysqldump savane user user_group user_squad groups group_type groups_default_permissions | mysql savane_trackers
+
+(don't replicate: form, session, user_preferences)
+
+4. URLs that use the trackers:
+You can either remove the block, or pass the whole page to the
+splitted DB config (by changing SAVANE_CONF in the Apache config):
+- front-page: "Most Popular Items"
+- user page: "Open Items submitted by" and "Open Items assigned to"
+- site menu: contextual recipes and "My Votes"
+- registration: create new tracker item
+- /my/ "My Incoming Items" (along with news)
+- /my/groups.php "Watched Partners"
+- /project/memberlist.php -> link to "Watch" another user
+
+5. mod_rewrite the base front-end URLs as they change
+
+<LocationMatch "^/(bugs|support|task|patch|cookbok)/|^/my/$|^/my/items.php$">
+  SetEnv SAVANE_CONF /tmp/savane-mini/savane/trackers
+</LocationMatch>

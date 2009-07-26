@@ -232,6 +232,8 @@ utils_get_content("my/groups");
 
 print html_splitpage(1);  # Watching other users.
 
+// SPLIT: don't look for trackers
+if (false) {
 print $HTML->box_top(_("Watched Partners"));
 
 $result_w = trackers_data_get_watchees(user_getid());
@@ -286,6 +288,7 @@ else
     }
 
 print $HTML->box_bottom();
+}
 
 print "<br />\n";
 

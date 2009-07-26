@@ -504,6 +504,11 @@ function session_set()
   extract(sane_import('cookie', array('session_hash', 'session_uid')));
   if ($session_hash && $session_uid) 
     {
+      // SPLIT: get sessions from the main site
+      global $sys_dbhost,$sys_dbuser,$sys_dbpasswd;
+      $conn = mysql_connect($sys_dbhost,$sys_dbuser,$sys_dbpasswd);
+      mysql_select_db('savane');
+
       $result=db_execute("SELECT * FROM session WHERE session_hash=? AND user_id=?",
 			 array($session_hash, $session_uid));
       $G_SESSION = db_fetch_array($result);
@@ -516,6 +521,9 @@ function session_set()
 	      $id_is_good = 1;
 	    } 
 	} # else hash was not in database
+
+      // SPLIT: reset DB connection
+      db_connect();
     } # else (hash does not exist) or (session hash is bad)
   
   if ($id_is_good) 

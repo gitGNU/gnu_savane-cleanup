@@ -45,7 +45,9 @@ function show_features_boxes()
 
 
   ### Popular items
-  $votes = show_votes();
+  // SPLIT: don't show popular boxes
+  //$votes = show_votes();
+  $votes = '';
 
   if ($votes)
     {

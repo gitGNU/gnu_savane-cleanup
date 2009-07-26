@@ -60,7 +60,9 @@ print '</p>';
 print html_splitpage("start");
 
 
-if (!$is_suspended)
+// SPLIT: don't display trackers info
+//if (!$is_suspended)
+if (false)
 {
 
   # List items:

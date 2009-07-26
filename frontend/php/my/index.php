@@ -94,6 +94,8 @@ if (user_isloggedin())
   print html_splitpage(1);
 
   #### News to approve
+  // SPLIT: don't look for news
+  if (false) {
   # Shown only if the user is news manager somewhere and if any item found
   reset($usergroups);
   reset($usergroups_groupid);
@@ -173,6 +175,7 @@ if (user_isloggedin())
       print _("None found");
     }
   print '</div>';
+  }
 
  ################ LEFT PART ############################
 

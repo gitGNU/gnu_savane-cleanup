@@ -255,7 +255,9 @@ function pagemenu_my ()
 			 _("Browse my items (bugs, tasks, bookmarks...)"));
   pagemenu_submenu_end();
 
-  if (user_use_votes())
+  // SPLIT: don't look for votes
+  //if (user_use_votes())
+  if (false)
     {
       pagemenu_submenu_title(_("Votes"), 
 			     $GLOBALS['sys_home'].'my/votes.php', 
