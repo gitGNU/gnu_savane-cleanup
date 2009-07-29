@@ -19,11 +19,11 @@ Trackers:
 mysqldump savane bugs bugs_canned_responses bugs_cc bugs_dependencies bugs_field bugs_field_usage bugs_field_value bugs_filter bugs_history bugs_report bugs_report_field cookbook cookbook_canned_responses cookbook_cc cookbook_context2recipe cookbook_dependencies cookbook_field cookbook_field_usage cookbook_field_value cookbook_filter cookbook_history cookbook_report cookbook_report_field form group_preferences group_type groups groups_default_permissions patch patch_canned_responses patch_cc patch_dependencies patch_field patch_field_usage patch_field_value patch_filter patch_history patch_report patch_report_field session support support_canned_responses support_cc support_dependencies support_field support_field_usage support_field_value support_filter support_history support_report support_report_field task task_canned_responses task_cc task_dependencies task_field task_field_usage task_field_value task_filter task_history task_report task_report_field trackers_export trackers_field_transition trackers_field_transition_other_field_update trackers_file trackers_msgid trackers_notification trackers_notification_event trackers_notification_role trackers_spamban trackers_spamcheck_queue trackers_spamcheck_queue_notification trackers_spamscore trackers_watcher user user_group user_preferences user_squad user_votes | mysql savane_trackers
 
 3. Replicate
-- user
+- user (beware of not erasing the spam score)
 - user_group
 - user_squad
-- groups
-- group_type (can_use_<tracker>..)
+- groups (beware of not erasing trackers configuration)
+- group_type (for can_use_<tracker>, <tracker>_flags, <tracker>_rflags)
 - groups_default_permissions
 
 mysqldump savane user user_group user_squad groups group_type groups_default_permissions | mysql savane_trackers
@@ -40,6 +40,7 @@ splitted DB config (by changing SAVANE_CONF in the Apache config):
 - /my/ "My Incoming Items" (along with news)
 - /my/groups.php "Watched Partners"
 - /project/memberlist.php -> link to "Watch" another user
+- /project/admin/conf-copy.php -> copy tracker configuration from another project
 
 5. mod_rewrite the base front-end URLs as they change
 
