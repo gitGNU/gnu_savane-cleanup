@@ -17,14 +17,17 @@ software.
 See AUTHORS.Savannah for the authors of the Savannah software.
 
 -------------------------------------------------------------------------------
- Nowadays, 2004-2006
+ Nowadays, 2004-2011
 -------------------------------------------------------------------------------
+
+Michael J. Flickinger <mjflick--gnu.org>
+	Bugfixing, code improvements.
 
 Timothee Besset		<ttimo--ttimo.net>
 	Subversion support implementation.
 
 Sylvain Beucler		<beuc--beuc.net>
-	Bugfixing, code improvements.
+
 
 James E. Blair		<corvus--gnu.org>
 	Code improvements.
