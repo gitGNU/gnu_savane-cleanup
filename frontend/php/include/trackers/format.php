@@ -87,7 +87,7 @@ function format_item_details ($item_id, $group_id, $ascii=false, $item_assigned_
 
   # Not in text output (mail notif) and if there are svn commits, 
   # find out if there is a relevant link to add
-  unset($svn_link);
+  $svn_link = '';
   if (!$ascii && $svn_entries_exist)
     {
       global $project;
@@ -320,7 +320,7 @@ function format_item_details ($item_id, $group_id, $ascii=false, $item_assigned_
 	  # If comment type is special commit thing, unset it so it does
 	  # not appear in text
 	  if ($is_svn)
-	    { unset($comment_type); }
+	    { $comment_type= ''; }
 	  if ($comment_type)
 	    {
 	      # put the comment type in strong
