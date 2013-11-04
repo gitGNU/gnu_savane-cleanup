@@ -162,7 +162,7 @@ if ($forum_id)
 
   $result = db_execute("SELECT user.user_name,user.realname,forum.has_followups,user.user_id,forum.msg_id,forum.group_forum_id,forum.subject,forum.thread_id,forum.body,forum.date,forum.is_followup_to, forum_group_list.group_id  ".
      "FROM forum,user,forum_group_list WHERE forum.group_forum_id = ? AND user.user_id=forum.posted_by $threading_sql AND forum_group_list.group_forum_id = forum.group_forum_id ".
-     "ORDER BY forum.date DESC LIMIT ?,?", array($forum_id, $offset, $max_rows+1));
+     "ORDER BY forum.date DESC LIMIT ?,?", array($forum_id, (int)$offset, $max_rows+1));
   $rows=db_numrows($result);
 
 
