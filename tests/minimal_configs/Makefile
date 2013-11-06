@@ -32,7 +32,7 @@ PATH:=$(PATH):/usr/local/sbin:/usr/sbin:/sbin
 	echo '#$$sys_debug_noformcheck=true;' >> /tmp/savane-mini/savane/.savane.conf.php
 	echo 'our $$sys_dbparams="mysql_socket=/tmp/savane-mini/mysql/sock";' > /tmp/savane-mini/savane/savane.conf.pl
 database:
-	cd ../.. && ./configure --sysconfdir=/tmp/savane-mini --with-db-options="-S /tmp/savane-mini/mysql/sock"
+	cd ../.. && ./configure --sysconfdir=/tmp/savane-mini --with-db-options="-S /tmp/savane-mini/mysql/sock -u root"
 	make -C ../../frontend/php/images
 	for i in 1 2 3 4 5; do if mysqladmin -S /tmp/savane-mini/mysql/sock ping; then break; fi; sleep 1; done
 	cd ../.. && make database
@@ -50,7 +50,7 @@ apache2-start:
 mysql-start:
 #	Use max_allowed_packet=32M to import big databases when testing
 	mysqld_safe --no-defaults --pid-file=pid --socket=sock \
-		--skip-networking -O max_allowed_packet=32M \
+		--skip-networking --max_allowed_packet=32M \
 		--datadir=/tmp/savane-mini/mysql > /dev/null &
 
 restart: mysql-stop mysql-start apache2-restart
@@ -59,7 +59,7 @@ apache2-restart:
 
 stop: apache2-stop mysql-stop
 mysql-stop:
-	-mysqladmin -S /tmp/savane-mini/mysql/sock shutdown
+	-mysqladmin -S /tmp/savane-mini/mysql/sock -u root shutdown
 apache2-stop:
 	-kill `cat /tmp/savane-mini/apache2/pid`
 
