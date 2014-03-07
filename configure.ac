@@ -130,8 +130,8 @@ AC_CONFIG_FILES(backend/mail/sv_mailman, [chmod +x backend/mail/sv_mailman])
 AC_CONFIG_FILES(backend/mail/sv_aliases, [chmod +x backend/mail/sv_aliases])
 AC_CONFIG_FILES(backend/mail/sv_mailman_and_mailarchivedotcom,
 	[chmod +x backend/mail/sv_mailman_and_mailarchivedotcom])
-AC_CONFIG_FILES(backend/extra/subversion/sv_extra_svn_postcommit_brigde,
-	[chmod +x backend/extra/subversion/sv_extra_svn_postcommit_brigde])
+AC_CONFIG_FILES(backend/extra/subversion/sv_extra_svn_postcommit_bridge,
+	[chmod +x backend/extra/subversion/sv_extra_svn_postcommit_bridge])
 AC_CONFIG_FILES(backend/extra/subversion/sv_extra_daily_svn_tarball,
 	[chmod +x backend/extra/subversion/sv_extra_daily_svn_tarball])
 AC_CONFIG_FILES(backend/extra/cvs/sv_extra_daily_cvs_tarball,
