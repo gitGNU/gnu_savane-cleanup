@@ -82,7 +82,7 @@ sub SvnMakeAreaAttic {
 
 	# hardcode svnmailer + ciabot support
 	open(FILE, "> $dir_svn/hooks/post-commit");
-	print FILE '#!/bin/bash
+	print FILE '#!/bin/sh
 # (obviously, svn-mailer and ciabot.sh must be in the relevant PATH)
 error=0
 sudo sv_extra_svn_postcommit_bridge -t $1 -r $2 -p '.$name.' || error=1
