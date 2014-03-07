@@ -84,7 +84,7 @@ sub SvnMakeAreaAttic {
 	open(FILE, "> $dir_svn/hooks/post-commit");
 	print FILE "#!/usr/bin/perl
 # (obviously, svn-mailer must be in the relevant PATH)
-system(\"sv_extra_svn_postcommit_brigde\", \"-t\", \"\$ARGV[0]\", \"-r\", \"\$ARGV[1]\", \"-p\", \"$name\");
+system(\"sudo sv_extra_svn_postcommit_bridge\", \"-t\", \"\$ARGV[0]\", \"-r\", \"\$ARGV[1]\", \"-p\", \"$name\");
 system(\"svn-mailer\", \"-d\$ARGV[0]\", \"-r\$ARGV[1]\", \"-f/etc/svn-mailer.conf\");
 ";
 	close(FILE);
