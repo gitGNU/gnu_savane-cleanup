@@ -82,11 +82,13 @@ sub SvnMakeAreaAttic {
 
 	# hardcode svnmailer + ciabot support
 	open(FILE, "> $dir_svn/hooks/post-commit");
-	print FILE "#!/usr/bin/perl
-# (obviously, svn-mailer must be in the relevant PATH)
-system(\"sudo sv_extra_svn_postcommit_bridge\", \"-t\", \"\$ARGV[0]\", \"-r\", \"\$ARGV[1]\", \"-p\", \"$name\");
-system(\"svn-mailer\", \"-d\$ARGV[0]\", \"-r\$ARGV[1]\", \"-f/etc/svn-mailer.conf\");
-";
+	print FILE '#!/bin/bash
+# (obviously, svn-mailer and ciabot.sh must be in the relevant PATH)
+error=0
+sudo sv_extra_svn_postcommit_bridge -t $1 -r $2 -p '.$name.' || error=1
+svn-mailer -d$1 -r$2 -f/etc/svn-mailer-diff.conf || error=1
+exit $error  # svn will display stderr if non-zero
+';
 	close(FILE);
 	system("chmod", "755", "$dir_svn/hooks", "$dir_svn/hooks/post-commit");
 	return " ".$dir_svn;
