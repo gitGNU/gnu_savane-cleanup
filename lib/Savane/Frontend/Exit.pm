@@ -38,5 +38,7 @@ sub PrintExit {
     print end_html();
 
     # calling exit() will not do the right thing with mod_perl
-    Apache::exit();
+    # But we're not using mod_perl anymore!
+    #Apache::exit();
+    exit();
 }
