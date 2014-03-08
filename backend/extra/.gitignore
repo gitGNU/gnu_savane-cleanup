@@ -6,4 +6,4 @@ sv_extra_viewcvs_forbidden
 sv_extra_dead_projects
 sv_extra_merge_projects
 sv_extra_daily_svn_tarball
-sv_extra_svn_postcommit_brigde
+sv_extra_svn_postcommit_bridge
