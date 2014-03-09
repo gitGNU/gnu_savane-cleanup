@@ -726,7 +726,7 @@ function _markup_inline($line)
     # then (optionally) any character except asterisk
     .'[^*]*?)'
     # then an asterisk
-    .'\*/', '<strong>$2</strong>', $line);
+    .'\*/', '$1<strong>$2</strong>', $line);
 
   # _word_ -> <em>word</em>
   $line = preg_replace(
