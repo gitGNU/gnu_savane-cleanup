@@ -118,7 +118,6 @@ pg_query       ($out, 'DELETE FROM pfo_role_setting WHERE role_id IN (SELECT rol
 pg_query_params($out, 'DELETE FROM pfo_role_setting WHERE role_id=$1', array($anonymous_role));
 pg_query($out, 'DELETE FROM pfo_role WHERE home_group_id IS NOT NULL');
 pg_query($out, 'DELETE FROM role_project_refs');
-// ? do we need to keep projects siteadmin/newsadmin/peerrating/stats ?
 pg_query($out, 'DELETE FROM groups');
 
 $res = $in->query("SELECT * FROM groups WHERE unix_group_name != 'svusers'") or die($in->error);
@@ -133,8 +132,8 @@ while ($row = $res->fetch_assoc()) {
     'unix_group_name'     => $row['unix_group_name'],
     //unix_box            => default 'shell',
     //http_domain         => ?,
-    'short_description'   => $row['short_description'],
-    // TODO: long_description
+    'short_description'   => $row['long_description'],
+    // TODO: short_description (search results) vs. long_description (project homepage)
     'register_purpose'    => $row['register_purpose'],
     'license_other'       => $row['license_other'],
     'register_time'       => $row['register_time'],
@@ -201,10 +200,10 @@ $res = $in->query("SELECT user_group.user_id, user_group.group_id, user_group.ad
       group_type.support_flags AS gt_support_flags,
     user.realname
   FROM user_group
-    JOIN groups ON user_group.group_id = groups.group_id
-    JOIN groups_default_permissions ON groups.group_id = groups_default_permissions.group_id
+    JOIN groups USING (group_id)
+    LEFT JOIN groups_default_permissions USING (group_id)
     JOIN group_type ON groups.type = group_type.type_id
-    JOIN user ON user_group.user_id = user.user_id") or die($in->error);
+    JOIN user USING (user_id)") or die($in->error);
 $project_roles = array();
 while ($row = $res->fetch_assoc()) {
   if ($row['admin_flags'] == 'A') {
@@ -237,7 +236,6 @@ while ($row = $res->fetch_assoc()) {
     }
   }
 }
-
 
 $res = pg_query('SELECT MAX(role_id)+1 FROM pfo_role');
 $cur_role = pg_fetch_result($res, 0,0);
@@ -294,4 +292,4 @@ insert($out, 'pfo_user_role', $pfo_user_role);
 
 
 print "Memory usage: " . memory_get_usage() . "\n";
-print "Memory peak: " . memory_get_peak_usage() . "\n";
+print "Memory peak : " . memory_get_peak_usage() . "\n";
