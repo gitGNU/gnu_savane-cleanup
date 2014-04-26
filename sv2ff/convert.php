@@ -111,6 +111,7 @@ while ($row = $res->fetch_assoc()) {
 // remove default tracker for 'siteadmin'
 pg_query($out, 'DELETE FROM artifact_group_list');
 // remove default tasks for 'siteadmin'
+pg_query($out, 'DELETE FROM project_task');  // Remove empty task #1
 pg_query($out, 'DELETE FROM project_group_list');
 // remove default roles inclusions
 pg_query       ($out, 'DELETE FROM pfo_role_setting WHERE role_id IN (SELECT role_id FROM pfo_role WHERE home_group_id IS NOT NULL)');
@@ -290,9 +291,6 @@ foreach($project_roles as $group_id => &$roles) {
 insert($out, 'pfo_role', $pfo_role);
 insert($out, 'pfo_role_setting', $pfo_role_setting);
 insert($out, 'pfo_user_role', $pfo_user_role);
-
-// Remove empty task #1
-pg_query($out, 'DELETE FROM project_task');
 
 
 print "Memory usage: " . memory_get_usage() . "\n";
