@@ -39,3 +39,6 @@ If you need to recreate fusionforge-init.sql (current is for FusionForge 5.3):
 ** User homedirs: make optionnal, place keys in /etc/ssh/keys/
 ** Obsolete fields: users.authorized_keys, realname (generated field), user_pw (insecure MD5 hash)
 ** Database clean-up: remove spurious empty task #1
+** Check if core:news_group still has a meaning
+** Add way for non-admin users to propose news + permissions (can_submit/can_approve)?
+** Fix news comments count

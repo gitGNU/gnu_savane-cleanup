@@ -45,7 +45,7 @@ function insert($out, $table, &$entries) {
     $query .= ')';
   }
 
-  pg_query($out, $query);
+  pg_query($out, $query) or die(pg_last_error());
 }
 
 $last_time = -1;
@@ -76,7 +76,7 @@ $out = pg_connect("host=127.0.0.1 dbname=gforge user=gforge password=".file_get_
 
 // Constants
 $res = pg_query_params('SELECT role_id FROM pfo_role JOIN pfo_role_class ON pfo_role.role_class = pfo_role_class.class_id WHERE class_name=$1',
-		       array('PFO_RoleAnonymous'));
+		       array('PFO_RoleAnonymous')) or die(pg_last_error());
 $anonymous_role = pg_fetch_result($res, 0,0);
 
 
@@ -91,11 +91,11 @@ section("- Users");
 // - keep user "None", references in some trackers default AFAICR
 section("  Deleting existing users");
 // Delete dependencies
-pg_query($out, 'DELETE FROM group_join_request');
-pg_query($out, 'DELETE FROM pfo_user_role');
+pg_query($out, 'DELETE FROM group_join_request') or die(pg_last_error());
+pg_query($out, 'DELETE FROM pfo_user_role') or die(pg_last_error());
 // Reset users table (way faster than "DELETE FROM users WHERE user_id != 100")
-pg_query($out, 'TRUNCATE users CASCADE');
-pg_query($out, "INSERT INTO users VALUES (100, 'None', 'noreply@forge.internal', '*********34343', 'Nobody', 'A', '/bin/bash', '', 'N', 20100, 'shell', 0, NULL, 0, 0, NULL, NULL, 0, '', 'GMT', 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, 'Nobody', NULL, NULL, 'US', 24, 1, 20100, 1)");
+pg_query($out, 'TRUNCATE users CASCADE') or die(pg_last_error());
+pg_query($out, "INSERT INTO users VALUES (100, 'None', 'noreply@forge.internal', '*********34343', 'Nobody', 'A', '/bin/bash', '', 'N', 20100, 'shell', 0, NULL, 0, 0, NULL, NULL, 0, '', 'GMT', 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, 'Nobody', NULL, NULL, 'US', 24, 1, 20100, 1)") or die(pg_last_error());
 
 section("  Loading Savane users");
 $res = $in->query("SELECT * FROM user WHERE user_id != 100 AND status != 'SQD'") or die($in->error);
@@ -158,16 +158,20 @@ section("- Groups");
 
 section("  Deleting existing groups");
 // remove default tracker for 'siteadmin'
-pg_query($out, 'DELETE FROM artifact_group_list');
+pg_query($out, 'DELETE FROM artifact_group_list') or die(pg_last_error());
 // remove default tasks for 'siteadmin'
-pg_query($out, 'DELETE FROM project_task');  // Remove empty task #1
-pg_query($out, 'DELETE FROM project_group_list');
+pg_query($out, 'DELETE FROM project_task') or die(pg_last_error());  // Remove empty task #1
+pg_query($out, 'DELETE FROM project_group_list') or die(pg_last_error());
 // remove default roles inclusions
-pg_query       ($out, 'DELETE FROM pfo_role_setting WHERE role_id IN (SELECT role_id FROM pfo_role WHERE home_group_id IS NOT NULL)');
-pg_query_params($out, 'DELETE FROM pfo_role_setting WHERE role_id=$1', array($anonymous_role));
-pg_query($out, 'DELETE FROM pfo_role WHERE home_group_id IS NOT NULL');
-pg_query($out, 'DELETE FROM role_project_refs');
-pg_query($out, 'DELETE FROM groups');
+pg_query       ($out, 'DELETE FROM pfo_role_setting WHERE role_id IN (SELECT role_id FROM pfo_role WHERE home_group_id IS NOT NULL)') or die(pg_last_error());
+pg_query_params($out, 'DELETE FROM pfo_role_setting WHERE role_id=$1', array($anonymous_role)) or die(pg_last_error());
+pg_query($out, 'DELETE FROM pfo_role WHERE home_group_id IS NOT NULL') or die(pg_last_error());
+pg_query($out, 'DELETE FROM role_project_refs') or die(pg_last_error());
+// remove group news & comments
+pg_query($out, 'DELETE FROM forum_group_list');
+pg_query($out, 'DELETE FROM forum');
+// actually delete groups
+pg_query($out, 'DELETE FROM groups') or die(pg_last_error());
 
 section("  Loading Savane groups");
 $res = $in->query("SELECT * FROM groups WHERE unix_group_name != 'svusers'") or die($in->error);
@@ -374,6 +378,105 @@ insert($out, 'pfo_role_setting', $pfo_role_setting);
 insert($out, 'pfo_user_role', $pfo_user_role);
 
 
+//
+// News
+//
+section("- News items");
+
+section("  Deleting existing news");
+pg_query($out, 'DELETE FROM news_bytes');
+
+
+section("  Loading Savane news");
+$res = $in->query("SELECT * FROM news_bytes") or die($in->error);
+$news_bytes = array();
+while ($row = $res->fetch_assoc()) {
+  $news_bytes[] = array(
+    'id'             => $row['id'],
+    'group_id'       => $row['group_id'], 
+    'submitted_by'   => $row['submitted_by'] ? $row['submitted_by'] : 100,
+    'is_approved'    => $row['is_approved'] == 5 ? 4 : $row['is_approved'],
+    // 0=approved, 1=frontpage, 4=deleted, 5=proposed
+    // TODO?: 'proposed' not supported by FusionForge
+    'post_date'      => $row['date'],
+    // TODO:         => $row['date_last_edit'],
+    'forum_id'       => $row['forum_id'],
+    'summary'        => $row['summary'],
+    'details'        => $row['details'],
+ );
+}
+
+section("  Creating FusionForge news");
+insert($out, 'news_bytes', $news_bytes);
+
+section("  Loading Savane comments");
+// Comments home
+$res = $in->query("SELECT * FROM forum_group_list") or die($in->error);
+$forum_group_list = array();
+while ($row = $res->fetch_assoc()) {
+  $forum_group_list[] = array(
+    'group_forum_id' => $row['group_forum_id'],
+    'group_id'       => $row['group_id'],
+    'forum_name'     => $row['forum_name'],
+    'description'    => $row['description'],
+    // 'send_all_posts_to' => not supported in Savane, using default
+    // $row['is_public']   => always '1' in Savane, not imported
+ );
+}
+// Comments
+// ignore orphan comments (3 occurrences at gna.org)
+$res = $in->query("SELECT forum.* FROM forum LEFT JOIN forum_group_list USING (group_forum_id) WHERE forum_group_list.group_forum_id IS NOT NULL") or die($in->error);
+$forum = array();
+while ($row = $res->fetch_assoc()) {
+  $forum[] = array(
+    'msg_id'             => $row['msg_id'],
+    'group_forum_id'     => $row['group_forum_id'],
+    'posted_by'          => $row['posted_by'],
+    'subject'            => $row['subject'],
+    'body'               => $row['body'],
+    'post_date'          => $row['date'],
+    'is_followup_to'     => $row['is_followup_to'],
+    'thread_id'          => $row['thread_id'],
+    'has_followups'      => $row['has_followups'],
+    //'most_recent_date' => ?, TODO
+ );
+}
+// Comments read/unread status
+// ignore status for deleted comments (6 occurrences at gna.org)
+// not much data to expect since it's ununsed in Savane 3, but there may be data from prior
+$res = $in->query("SELECT * FROM forum_saved_place LEFT JOIN forum ON forum_saved_place.forum_id = forum.msg_id WHERE forum.msg_id IS NOT NULL AND saved_place_id != 100") or die($in->error);
+$forum_saved_place = array();
+while ($row = $res->fetch_assoc()) {
+  $forum_saved_place[] = array(
+    'user_id'            => $row['user_id'],
+    'forum_id'           => $row['forum_id'],
+    'save_date'          => $row['save_date'],
+    // $row['saved_place_id'] => unnecessary, not imported
+ );
+}
+// Comments notifications
+// ignore status for deleted forums (25 occurrences at gna.org)
+// not much data to expect since it's ununsed in Savane 3, but there may be data from prior
+$res = $in->query("SELECT * FROM forum_saved_place LEFT JOIN forum ON forum_saved_place.forum_id = forum.msg_id WHERE forum.msg_id IS NOT NULL AND saved_place_id != 100") or die($in->error);
+$forum_saved_place = array();
+while ($row = $res->fetch_assoc()) {
+  $forum_saved_place[] = array(
+    'user_id'            => $row['user_id'],
+    'forum_id'           => $row['forum_id'],
+    'save_date'          => $row['save_date'],
+    // $row['saved_place_id'] => unnecessary, not imported
+ );
+}
+// TODO: forum_thread_id?  Check that forum_thread_seq is OK after adding a new forum
+
+
+section("  Creating FusionForge forums/comments");
+insert($out, 'forum_group_list', $forum_group_list);
+insert($out, 'forum', $forum);
+insert($out, 'forum_saved_place', $forum_saved_place);
+
+
+
 section("\n");
-print "Memory usage: " . memory_get_usage() . "\n";
-print "Memory peak : " . memory_get_peak_usage() . "\n";
+print "Memory usage: " . (memory_get_usage(true) / pow(1024, 2)) . "MB\n";
+print "Memory peak : " . (memory_get_peak_usage(true) / pow(1024, 2)) . "MB\n";
