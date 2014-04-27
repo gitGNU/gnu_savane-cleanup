@@ -17,9 +17,6 @@
 // You should have received a copy of the GNU Affero General Public License
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-// Dependencies:
-// aptitude install php5-cli php5-mysql php5-pgsql
-
 require_once(dirname(__FILE__).'/savane.conf.php');
 
 /**
@@ -68,7 +65,7 @@ function section($title) {
 //
 section("Init");
 
-$in = new mysqli('', 'root', 'root', 'savane');
+$in = new mysqli('', $sys_dbuser, $sys_dbpasswd, $sys_dbname);
 if ($in->connect_errno) {
   die($in->connect_error);
 }

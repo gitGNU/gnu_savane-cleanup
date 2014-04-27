@@ -1,5 +1,0 @@
-* Add/fix in FusionForge
-** Language: auto-detect from browser Accept-Language
-** User homedirs: make optionnal, place keys in /etc/ssh/keys/
-** Obsolete fields: users.authorized_keys, realname (generated field), user_pw (insecure MD5 hash)
-** Database clean-up: remove spurious empty task #1

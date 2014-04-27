@@ -1,1 +1,41 @@
 Savane -> FusionForge migration script
+
+= Instructions =
+
+- Make sure your Savane MySQL database is reachable
+- Make sure an empty PostgreSQL database is available locally
+- Install PHP MySQL and PostgreSQL connectors, on Debian:
+  aptitude install php5-cli php5-mysql php5-pgsql
+- Optionally install GForge so you can test the results - e.g. work in
+  https://fusionforge.org/plugins/mediawiki/wiki/fusionforge/index.php/Virtual_machine_development_environment
+  using the Vagrantfile in the current directory.
+- Copy your savane.conf.php here (for DB credentials)
+- Create a 'pass' file with the main database password for FusionForge (no trailing newline)
+  e.g. the one from your FusionForge .ini files such as /etc/gforge/config.ini.d/debian-install-secrets.ini
+- Get rid of the requirement to use 'postgres' user:
+  su - postgres -c 'psql -c "CREATE ROLE root WITH LOGIN SUPERUSER"'
+- sudo ./reset-import.sh
+- php convert.php
+
+You're done!
+
+
+= Generate fusionforge-init.sql =
+
+If you need to recreate fusionforge-init.sql (current is for FusionForge 5.3):
+- Install FusionForge with the "minimal" variant (no plugins), e.g. using
+  https://fusionforge.org/plugins/mediawiki/wiki/fusionforge/index.php/Virtual_machine_development_environment
+- pg_dumpall > fusionforge-init.sql
+
+
+= TODO =
+
+* Add/fix in Savane
+** Database clean-up:
+*** remove duplicates in groups_default_permissions
+*** import duplicates clean-up from http://git.savannah.gnu.org/cgit/savane.git/tree/migrate_old_savane.sql
+* Add/fix in FusionForge
+** Language: auto-detect from browser Accept-Language
+** User homedirs: make optionnal, place keys in /etc/ssh/keys/
+** Obsolete fields: users.authorized_keys, realname (generated field), user_pw (insecure MD5 hash)
+** Database clean-up: remove spurious empty task #1
