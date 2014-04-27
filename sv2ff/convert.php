@@ -1,7 +1,33 @@
 <?php
+// Convert Savane database to FusionForge
+// Copyright (C) 2014  Sylvain Beucler
+//
+// This file is part of Savane.
+// 
+// Savane is free software: you can redistribute it and/or modify
+// it under the terms of the GNU Affero General Public License as
+// published by the Free Software Foundation, either version 3 of the
+// License, or (at your option) any later version.
+// 
+// Savane is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU Affero General Public License for more details.
+// 
+// You should have received a copy of the GNU Affero General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+// Dependencies:
 // aptitude install php5-cli php5-mysql php5-pgsql
+
 require_once(dirname(__FILE__).'/savane.conf.php');
 
+/**
+ * Convert a list of of arrays to a multi-INSERT database
+ * $out: PostgreSQL database descriptor
+ * $table: target table
+ * $entries: list of arrays, 1 array -> 1 database row
+ */
 function insert($out, $table, &$entries) {
   if (count($entries) == 0)
     return;
@@ -25,6 +51,22 @@ function insert($out, $table, &$entries) {
   pg_query($out, $query);
 }
 
+$last_time = -1;
+function section($title) {
+  global $last_time;
+  $cur_time = time();
+  if ($last_time > 0)
+    print " (" . ($cur_time - $last_time) . "s)";
+  print "\n";
+  print "$title";
+  $last_time = $cur_time;
+}
+
+
+//
+// Init
+//
+section("Init");
 
 $in = new mysqli('', 'root', 'root', 'savane');
 if ($in->connect_errno) {
@@ -35,7 +77,6 @@ $in->set_charset('utf8');
 $out = pg_connect("host=127.0.0.1 dbname=gforge user=gforge password=".file_get_contents('pass'))
   or die(pg_last_error());
 
-
 // Constants
 $res = pg_query_params('SELECT role_id FROM pfo_role JOIN pfo_role_class ON pfo_role.role_class = pfo_role_class.class_id WHERE class_name=$1',
 		       array('PFO_RoleAnonymous'));
@@ -43,13 +84,23 @@ $anonymous_role = pg_fetch_result($res, 0,0);
 
 
 
+//
+// Users
+//
+section("- Users");
+
 // Remove default users
 // - remove references to existing (admin) users in the RBAC
 // - keep user "None", references in some trackers default AFAICR
+section("  Deleting existing users");
+// Delete dependencies
 pg_query($out, 'DELETE FROM group_join_request');
 pg_query($out, 'DELETE FROM pfo_user_role');
-pg_query($out, 'DELETE FROM users WHERE user_id != 100');
+// Reset users table (way faster than "DELETE FROM users WHERE user_id != 100")
+pg_query($out, 'TRUNCATE users CASCADE');
+pg_query($out, "INSERT INTO users VALUES (100, 'None', 'noreply@forge.internal', '*********34343', 'Nobody', 'A', '/bin/bash', '', 'N', 20100, 'shell', 0, NULL, 0, 0, NULL, NULL, 0, '', 'GMT', 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, 'Nobody', NULL, NULL, 'US', 24, 1, 20100, 1)");
 
+section("  Loading Savane users");
 $res = $in->query("SELECT * FROM user WHERE user_id != 100 AND status != 'SQD'") or die($in->error);
 $users = array();
 while ($row = $res->fetch_assoc()) {
@@ -93,21 +144,22 @@ while ($row = $res->fetch_assoc()) {
     //'tooltipcs'        => ?,
  );
 }
+
+section("  Creating FusionForge users");
 insert($out, 'users', $users);
 
-
-// Admins
-$res = $in->query("SELECT * FROM user_group WHERE group_id=(SELECT group_id FROM groups WHERE unix_group_name='$sys_unix_group_name') AND admin_flags='A'") or die($in->error);
-while ($row = $res->fetch_assoc()) {
-  pg_query_params($out, 'INSERT INTO pfo_user_role VALUES ($1, (SELECT role_id FROM pfo_role WHERE role_name=\'Forge administrators\'))', array($row['user_id']));
-}
 
 
 //Licenses
 // TODO
 
 
+//
 // Groups
+//
+section("- Groups");
+
+section("  Deleting existing groups");
 // remove default tracker for 'siteadmin'
 pg_query($out, 'DELETE FROM artifact_group_list');
 // remove default tasks for 'siteadmin'
@@ -120,6 +172,7 @@ pg_query($out, 'DELETE FROM pfo_role WHERE home_group_id IS NOT NULL');
 pg_query($out, 'DELETE FROM role_project_refs');
 pg_query($out, 'DELETE FROM groups');
 
+section("  Loading Savane groups");
 $res = $in->query("SELECT * FROM groups WHERE unix_group_name != 'svusers'") or die($in->error);
 $groups = array();
 $public_groups = array();
@@ -167,10 +220,31 @@ while ($row = $res->fetch_assoc()) {
   if ($row['is_public'])
     $public_groups[] = $row['group_id'];
 }
+
+section("  Creating FusionForge groups");
 insert($out, 'groups', $groups);
 
+
+//
 // Roles/permissions
+//
+section("- Roles and permissions");
+
+//
+// Site-wide admins
+//
+section("  Forge admins");
+$res = $in->query("SELECT * FROM user_group WHERE group_id=(SELECT group_id FROM groups WHERE unix_group_name='$sys_unix_group_name') AND admin_flags='A'") or die($in->error);
+while ($row = $res->fetch_assoc()) {
+  pg_query_params($out, 'INSERT INTO pfo_user_role VALUES ($1, (SELECT role_id FROM pfo_role WHERE role_name=\'Forge administrators\'))', array($row['user_id']));
+}
+
+
+//
 // Anonymous permissions
+//
+
+section("  Anonymous (public) permissions");
 $role_project_refs = array();
 foreach($public_groups as $group_id) {
   $role_project_refs[] = array('role_id' => $anonymous_role, 'group_id' => $group_id);
@@ -187,7 +261,12 @@ foreach($public_groups as $group_id) {
 insert($out, 'pfo_role_setting', $pfo_role_setting);
 
 
+//
 // User permissions -> user roles
+//
+
+section("  Loading Savane permissions");
+// Group users permissions per project
 $res = $in->query("SELECT user_group.user_id, user_group.group_id, user_group.admin_flags, user_group.privacy_flags,
     user_group.bugs_flags, user_group.task_flags, user_group.patch_flags, user_group.support_flags,
     groups_default_permissions.bugs_flags      AS gdp_bugs_flags,
@@ -237,11 +316,7 @@ while ($row = $res->fetch_assoc()) {
   }
 }
 
-$res = pg_query('SELECT MAX(role_id)+1 FROM pfo_role');
-$cur_role = pg_fetch_result($res, 0,0);
-$pfo_role = array();
-$pfo_role_setting = array();
-$pfo_user_role = array();
+section("  Merging permissions");
 // Attempt to merge all tracker roles in 'Contributor' if identical permissions
 // TODO: alternative: put all common perms in 'Contributor', and keep other perms as separate roles
 foreach($project_roles as $group_id => &$roles) {
@@ -265,6 +340,15 @@ foreach($project_roles as $group_id => &$roles) {
 	unset($roles[$role_name]);
   // TODO: move tracker permissions to 'Contributor'
 }
+
+
+// Create roles for each project
+section("  Converting permissions to roles");
+$res = pg_query('SELECT MAX(role_id)+1 FROM pfo_role');
+$cur_role = pg_fetch_result($res, 0,0);
+$pfo_role = array();
+$pfo_role_setting = array();
+$pfo_user_role = array();
 foreach($project_roles as $group_id => &$roles) {
   foreach($roles as $role_name => &$user_ids) {
     $pfo_role[] = array('role_id' => $cur_role, 'role_name' => $role_name, 'role_class' => 1, 'home_group_id' => $group_id);
@@ -286,10 +370,13 @@ foreach($project_roles as $group_id => &$roles) {
   
   // Note: no specific permissions for news in FusionForge (== project admin)
 }
+
+section("  Creating FusionForge roles");
 insert($out, 'pfo_role', $pfo_role);
 insert($out, 'pfo_role_setting', $pfo_role_setting);
 insert($out, 'pfo_user_role', $pfo_user_role);
 
 
+section("\n");
 print "Memory usage: " . memory_get_usage() . "\n";
 print "Memory peak : " . memory_get_peak_usage() . "\n";
