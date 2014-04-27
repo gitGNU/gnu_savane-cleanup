@@ -9,6 +9,7 @@ Savane -> FusionForge migration script
 - Optionally install GForge so you can test the results - e.g. work in
   https://fusionforge.org/plugins/mediawiki/wiki/fusionforge/index.php/Virtual_machine_development_environment
   using the Vagrantfile in the current directory.
+- Block your e-mail output e.g. iptables -A OUTPUT -p tcp --dport 25 -j REJECT --reject-with tcp-reset
 - Copy your savane.conf.php here (for DB credentials)
 - Create a 'pass' file with the main database password for FusionForge (no trailing newline)
   e.g. the one from your FusionForge .ini files such as /etc/gforge/config.ini.d/debian-install-secrets.ini
