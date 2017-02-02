@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # Create authorized_keys file for each system user
 # 
-# Copyright (C) 2009, 2011  Sylvain Beucler
+# Copyright (C) 2009, 2011, 2017  Sylvain Beucler
 #
 # This file is part of Savane.
 # 
@@ -83,6 +83,9 @@ for row in res.fetch_row(maxrows=0, how=1):
     db_keys = row['authorized_keys'] or ''
     db_keys = db_keys.replace('###', "\n")
     db_keys = db_keys.encode('UTF-8')
+    # Requires OpenSSH >= 7.2
+    #db_keys = ''.join(['restrict '+key for key in db_keys.splitlines()])
+    db_keys = ''.join(['no-port-forwarding,no-x11-forwarding,no-agent-forwarding,no-pty '+key for key in db_keys.splitlines()])
 
     sys_keys = ''
     user_sshdir_path = row['homedir'] + '/.ssh'
